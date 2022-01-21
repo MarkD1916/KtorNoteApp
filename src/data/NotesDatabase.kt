@@ -35,6 +35,7 @@ suspend fun checkPasswordForEmail(email: String, password: String): Boolean {
 }
 
 suspend fun getNotesForUser(email: String): List<Note> {
+    println("testcase ${notes.find(Note::owners contains email).publisher.KMongoToList()}")
     return notes.find(Note::owners contains email).publisher.KMongoToList()
 }
 
@@ -58,4 +59,14 @@ suspend fun deleteNoteForUser(email: String, noteID: String): Boolean{
         }
         return notes.deleteOneById(note.id).wasAcknowledged()
     } ?: return false
+}
+
+suspend fun isOwnerOfNote(noteID:String, owner:String): Boolean{
+    val note = notes.findOneById(noteID) ?: return false
+    return owner in note.owners
+}
+
+suspend fun addOwnerToNote(noteID: String, owner:String): Boolean{
+    val owners = notes.findOneById(noteID)?.owners ?: return false
+    return notes.updateOneById(noteID, setValue(Note::owners, owners + owner)).wasAcknowledged()
 }

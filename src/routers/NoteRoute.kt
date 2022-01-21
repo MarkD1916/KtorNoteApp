@@ -1,10 +1,10 @@
 package com.vmakdandroiddev.routers
 
+import com.vmakdandroiddev.data.*
 import com.vmakdandroiddev.data.collections.Note
-import com.vmakdandroiddev.data.deleteNoteForUser
-import com.vmakdandroiddev.data.getNotesForUser
+import com.vmakdandroiddev.data.requests.AddOwnerRequest
 import com.vmakdandroiddev.data.requests.DeleteNoteRequest
-import com.vmakdandroiddev.data.saveNote
+import com.vmakdandroiddev.data.responses.SimpleResponse
 import io.ktor.application.*
 import io.ktor.auth.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
@@ -44,19 +44,53 @@ fun Route.noteRoutes() {
         }
     }
 
-    route("/deleteNote"){
+    route("/addOwnerToNote") {
         authenticate {
-            post{
+            post {
+                val request = try {
+                    call.receive<AddOwnerRequest>()
+                } catch (e: ContentTransformationException) {
+                    call.respond(BadRequest)
+                    return@post
+                }
+                if (!checkIfUserExists(request.owner)) {
+                    call.respond(
+                        OK,
+                        SimpleResponse(false, "No user with this E-mail exists")
+                    )
+                    return@post
+                }
+                if (isOwnerOfNote(request.noteID, request.owner)) {
+                    call.respond(
+                        OK,
+                        SimpleResponse(false, "This user is already an owner of this note")
+                    )
+                    return@post
+                }
+                if (addOwnerToNote(request.noteID, request.owner)) {
+                    call.respond(
+                        OK,
+                        SimpleResponse(true, "${request.owner} can now see this note")
+                    )
+                } else {
+                    call.respond(Conflict)
+                }
+            }
+        }
+    }
+    route("/deleteNote") {
+        authenticate {
+            post {
                 val email = call.principal<UserIdPrincipal>()!!.name
 
-                val request = try{
+                val request = try {
                     call.receive<DeleteNoteRequest>()
-                } catch (e: ContentTransformationException){
+                } catch (e: ContentTransformationException) {
                     call.respond(BadRequest)
                     return@post
                 }
 
-                if(deleteNoteForUser(email, request.id)){
+                if (deleteNoteForUser(email, request.id)) {
                     call.respond(OK)
                 } else {
                     call.respond(Conflict)
