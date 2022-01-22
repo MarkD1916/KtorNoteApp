@@ -5,6 +5,7 @@ import com.vmakdandroiddev.data.collections.User
 import com.vmakdandroiddev.data.registerUser
 import com.vmakdandroiddev.data.requests.AccountRequest
 import com.vmakdandroiddev.data.responses.SimpleResponse
+import com.vmakdandroiddev.security.getHashWithSalt
 import io.ktor.application.*
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
 import io.ktor.http.HttpStatusCode.Companion.OK
@@ -24,7 +25,7 @@ fun Route.registerRoute(){
             }
             val userExists = checkIfUserExists(request.email)
             if(!userExists){
-                if (registerUser(User(request.email, request.password))){
+                if (registerUser(User(request.email, getHashWithSalt(request.password)))){
                     call.respond(OK, SimpleResponse(true, "Successfully created account"))
                 }
                 else{

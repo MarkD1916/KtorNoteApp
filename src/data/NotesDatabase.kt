@@ -2,6 +2,7 @@ package com.vmakdandroiddev.data
 
 import com.vmakdandroiddev.data.collections.Note
 import com.vmakdandroiddev.data.collections.User
+import com.vmakdandroiddev.security.checkHashForPassword
 import org.litote.kmongo.contains
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.coroutine.insertOne
@@ -31,12 +32,12 @@ suspend fun checkIfUserExists(email: String): Boolean {
 
 suspend fun checkPasswordForEmail(email: String, password: String): Boolean {
     val actualPassword = users.findOne(User::email eq email)?.password ?: return false
-    return actualPassword == password
+    return checkHashForPassword(password, actualPassword)
 }
 
 suspend fun getNotesForUser(email: String): List<Note> {
     println("testcase ${notes.find(Note::owners contains email).publisher.KMongoToList()}")
-    return notes.find(Note::owners contains email).publisher.KMongoToList()
+    return notes.find(Note::owners contains email).toList()
 }
 
 suspend fun saveNote(note: Note): Boolean {
